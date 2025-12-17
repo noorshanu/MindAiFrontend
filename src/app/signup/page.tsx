@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Navbar2 from '@/components/Navbar2'
 import Footer from '@/components/Footer'
+import OTPVerification from '@/components/OTPVerification'
 
 const SignupPage = () => {
   const [signupMethod, setSignupMethod] = useState<'email' | 'phone'>('email')
@@ -13,10 +14,17 @@ const SignupPage = () => {
   const [otpVerified, setOtpVerified] = useState(false)
   const [showOtpPassword, setShowOtpPassword] = useState(false)
   const [showOtpConfirmPassword, setShowOtpConfirmPassword] = useState(false)
+  const [showOTPScreen, setShowOTPScreen] = useState(false)
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [userId, setUserId] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [otpPassword, setOtpPassword] = useState('')
+  const [otpConfirmPassword, setOtpConfirmPassword] = useState('')
 
   return (
     <>
-      <Navbar2/>
+    <Navbar2/>
       <div className='min-h-screen bg-white flex items-center justify-center py-12 px-4'>
         <div className='container mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center'>
           {/* Left Section - Logo */}
@@ -76,8 +84,28 @@ const SignupPage = () => {
               </div>
 
               {/* Form */}
-              <form className='space-y-6'>
-                {signupMethod === 'email' ? (
+              {showOTPScreen && signupMethod === 'phone' ? (
+                <OTPVerification
+                  phoneNumber={phoneNumber}
+                  onVerify={(otp) => {
+                    console.log('OTP Verified:', otp)
+                    setOtpVerified(true)
+                    setShowOTPScreen(false)
+                  }}
+                  onResend={() => {
+                    console.log('Resending OTP to:', phoneNumber)
+                    // Handle resend OTP logic here
+                  }}
+                  onBack={() => {
+                    setShowOTPScreen(false)
+                    setOtpVerified(false)
+                  }}
+                />
+              ) : (
+                <form className='space-y-6' onSubmit={(e) => {
+                  e.preventDefault()
+                }}>
+                  {signupMethod === 'email' ? (
                   <>
                     {/* User ID Input */}
                     <div>
@@ -93,6 +121,8 @@ const SignupPage = () => {
                         <input
                           type='text'
                           id="user-id"
+                          value={userId || ''}
+                          onChange={(e) => setUserId(e.target.value || '')}
                           placeholder='Your user ID'
                           className='w-full pl-10 pr-4 py-3 border-2 border-[#84B357] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84B357] focus:border-transparent text-gray-700 placeholder-gray-400'
                         />
@@ -133,6 +163,8 @@ const SignupPage = () => {
                         <input
                           type={showPassword ? 'text' : 'password'}
                           id="password"
+                          value={password || ''}
+                          onChange={(e) => setPassword(e.target.value || '')}
                           placeholder='Your password'
                           className='w-full pl-10 pr-10 py-3 border-2 border-[#84B357] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84B357] focus:border-transparent text-gray-700 placeholder-gray-400'
                         />
@@ -166,6 +198,8 @@ const SignupPage = () => {
                         <input
                           type={showConfirmPassword ? 'text' : 'password'}
                           id="confirm-password"
+                          value={confirmPassword || ''}
+                          onChange={(e) => setConfirmPassword(e.target.value || '')}
                           placeholder='Confirm your password'
                           className='w-full pl-10 pr-10 py-3 border-2 border-[#84B357] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84B357] focus:border-transparent text-gray-700 placeholder-gray-400'
                         />
@@ -210,47 +244,24 @@ const SignupPage = () => {
                             <input
                               type='tel'
                               id="phone"
+                              value={phoneNumber || ''}
+                              onChange={(e) => setPhoneNumber(e.target.value || '')}
                               placeholder='Your phone number'
                               className='w-full pl-10 pr-4 py-3 border-2 border-[#84B357] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84B357] focus:border-transparent text-gray-700 placeholder-gray-400'
                             />
                           </div>
                         </div>
-
-                        {/* OTP Input */}
-                        <div>
-                          <label htmlFor="otp" className='block text-sm font-medium text-gray-700 mb-2'>
-                            Enter verification code
-                          </label>
-                          <div className='relative'>
-                            <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
-                              <svg className='h-5 w-5 text-gray-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' />
-                              </svg>
-                            </div>
-                            <input
-                              type='text'
-                              id="otp"
-                              placeholder='Enter OTP'
-                              maxLength={6}
-                              className='w-full pl-10 pr-4 py-3 border-2 border-[#84B357] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84B357] focus:border-transparent text-gray-700 placeholder-gray-400'
-                            />
-                          </div>
-                          <div className='flex justify-between items-center mt-2'>
-                            <button
-                              type='button'
-                              className='text-sm text-[#84B357] hover:underline font-medium'
-                            >
-                              Resend OTP
-                            </button>
-                            <button
-                              type='button'
-                              onClick={() => setOtpVerified(true)}
-                              className='text-sm bg-[#84B357] text-white px-4 py-2 rounded-md hover:bg-[#709944] transition-colors font-medium'
-                            >
-                              Verify OTP
-                            </button>
-                          </div>
-                        </div>
+                        <button
+                          type='button'
+                          onClick={() => {
+                            if (phoneNumber) {
+                              setShowOTPScreen(true)
+                            }
+                          }}
+                          className='w-full bg-[#84B357] text-white py-3 rounded-lg font-medium hover:bg-[#709944] transition-colors shadow-md text-lg'
+                        >
+                          Send OTP
+                        </button>
                       </>
                     ) : (
                       <>
@@ -268,6 +279,8 @@ const SignupPage = () => {
                             <input
                               type={showOtpPassword ? 'text' : 'password'}
                               id="otp-password"
+                              value={otpPassword || ''}
+                              onChange={(e) => setOtpPassword(e.target.value || '')}
                               placeholder='Your password'
                               className='w-full pl-10 pr-10 py-3 border-2 border-[#84B357] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84B357] focus:border-transparent text-gray-700 placeholder-gray-400'
                             />
@@ -301,6 +314,8 @@ const SignupPage = () => {
                             <input
                               type={showOtpConfirmPassword ? 'text' : 'password'}
                               id="otp-confirm-password"
+                              value={otpConfirmPassword || ''}
+                              onChange={(e) => setOtpConfirmPassword(e.target.value || '')}
                               placeholder='Confirm your password'
                               className='w-full pl-10 pr-10 py-3 border-2 border-[#84B357] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84B357] focus:border-transparent text-gray-700 placeholder-gray-400'
                             />
@@ -324,27 +339,28 @@ const SignupPage = () => {
                   </>
                 )}
 
-                {/* Signup Button */}
-                <button
-                  type='submit'
-                  className='w-full bg-[#4CAF50] text-white py-3 rounded-lg font-medium hover:bg-[#45a049] transition-colors shadow-md text-lg'
-                >
-                  Signup
-                </button>
+                  {/* Signup Button */}
+                  <button
+                    type='submit'
+                    className='w-full bg-[#4CAF50] text-white py-3 rounded-lg font-medium hover:bg-[#45a049] transition-colors shadow-md text-lg'
+                  >
+                    Signup
+                  </button>
 
-                {/* Login Link */}
-                <div className='text-center text-sm text-gray-600'>
-                  Already have an account?{' '}
-                  <Link href="/login" className='text-[#84B357] font-medium hover:underline'>
-                    Login
-                  </Link>
-                </div>
-              </form>
+                  {/* Login Link */}
+                  <div className='text-center text-sm text-gray-600'>
+                    Already have an account?{' '}
+                    <Link href="/login" className='text-[#84B357] font-medium hover:underline'>
+                      Login
+                    </Link>
+                  </div>
+    </form>
+              )}
             </div>
           </div>
         </div>
-      </div>
-      <Footer/>
+    </div>
+    <Footer/>
     </>
   )
 }

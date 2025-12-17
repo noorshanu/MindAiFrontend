@@ -5,10 +5,15 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Navbar2 from '@/components/Navbar2'
 import Footer from '@/components/Footer'
+import OTPVerification from '@/components/OTPVerification'
 
 const LoginPage = () => {
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email')
   const [showPassword, setShowPassword] = useState(false)
+  const [showOTPScreen, setShowOTPScreen] = useState(false)
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
   return (
     <>
@@ -65,8 +70,28 @@ const LoginPage = () => {
               </div>
 
               {/* Form */}
-              <form className='space-y-6'>
-                {loginMethod === 'email' ? (
+              {showOTPScreen ? (
+                <OTPVerification
+                  phoneNumber={phoneNumber}
+                  onVerify={(otp) => {
+                    console.log('OTP Verified:', otp)
+                    // Handle OTP verification logic here
+                    // After successful verification, redirect or proceed
+                  }}
+                  onResend={() => {
+                    console.log('Resending OTP to:', phoneNumber)
+                    // Handle resend OTP logic here
+                  }}
+                  onBack={() => setShowOTPScreen(false)}
+                />
+              ) : (
+                <form className='space-y-6' onSubmit={(e) => {
+                  e.preventDefault()
+                  if (loginMethod === 'phone' && phoneNumber) {
+                    setShowOTPScreen(true)
+                  }
+                }}>
+                  {loginMethod === 'email' ? (
                   <>
                     {/* Email Input */}
                     <div>
@@ -82,6 +107,8 @@ const LoginPage = () => {
                         <input
                           type='email'
                           id="email"
+                          value={email || ''}
+                          onChange={(e) => setEmail(e.target.value || '')}
                           placeholder='Your email address'
                           className='w-full pl-10 pr-4 py-3 border-2 border-[#84B357] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84B357] focus:border-transparent text-gray-700 placeholder-gray-400'
                         />
@@ -102,6 +129,8 @@ const LoginPage = () => {
                         <input
                           type={showPassword ? 'text' : 'password'}
                           id="password"
+                          value={password || ''}
+                          onChange={(e) => setPassword(e.target.value || '')}
                           placeholder='Your password'
                           className='w-full pl-10 pr-10 py-3 border-2 border-[#84B357] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84B357] focus:border-transparent text-gray-700 placeholder-gray-400'
                         />
@@ -144,57 +173,33 @@ const LoginPage = () => {
                         <input
                           type='tel'
                           id="phone"
+                          value={phoneNumber || ''}
+                          onChange={(e) => setPhoneNumber(e.target.value || '')}
                           placeholder='Your phone number'
                           className='w-full pl-10 pr-4 py-3 border-2 border-[#84B357] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84B357] focus:border-transparent text-gray-700 placeholder-gray-400'
                         />
                       </div>
                     </div>
-
-                    {/* OTP/Verification Code Input */}
-                    <div>
-                      <label htmlFor="otp" className='block text-sm font-medium text-gray-700 mb-2'>
-                        Enter verification code
-                      </label>
-                      <div className='relative'>
-                        <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
-                          <svg className='h-5 w-5 text-gray-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' />
-                          </svg>
-                        </div>
-                        <input
-                          type='text'
-                          id="otp"
-                          placeholder='Enter OTP'
-                          maxLength={6}
-                          className='w-full pl-10 pr-4 py-3 border-2 border-[#84B357] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84B357] focus:border-transparent text-gray-700 placeholder-gray-400'
-                        />
-                      </div>
-                      <button
-                        type='button'
-                        className='mt-2 text-sm text-[#84B357] hover:underline font-medium'
-                      >
-                        Resend OTP
-                      </button>
-                    </div>
                   </>
                 )}
 
-                {/* Login Button */}
-                <button
-                  type='submit'
-                  className='w-full bg-[#4CAF50] text-white py-3 rounded-lg font-medium hover:bg-[#45a049] transition-colors shadow-md text-lg'
-                >
-                  Login
-                </button>
+                  {/* Login Button */}
+                  <button
+                    type='submit'
+                    className='w-full bg-[#4CAF50] text-white py-3 rounded-lg font-medium hover:bg-[#45a049] transition-colors shadow-md text-lg'
+                  >
+                    Login
+                  </button>
 
-                {/* Signup Link */}
-                <div className='text-center text-sm text-gray-600'>
-                  Don&apos;t have an account?{' '}
-                  <Link href="/signup" className='text-[#84B357] font-medium hover:underline'>
-                    Sign up
-                  </Link>
-                </div>
-              </form>
+                  {/* Signup Link */}
+                  <div className='text-center text-sm text-gray-600'>
+                    Don&apos;t have an account?{' '}
+                    <Link href="/signup" className='text-[#84B357] font-medium hover:underline'>
+                      Sign up
+                    </Link>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>
