@@ -3,21 +3,26 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import Navbar2 from '@/components/Navbar2'
 import Footer from '@/components/Footer'
 import OTPVerification from '@/components/OTPVerification'
+import { authApi, saveToken } from '@/libs/api'
 
 const LoginPage = () => {
+  const router = useRouter()
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email')
   const [showPassword, setShowPassword] = useState(false)
   const [showOTPScreen, setShowOTPScreen] = useState(false)
   const [phoneNumber, setPhoneNumber] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   return (
     <>
-      <Navbar2/>
+    <Navbar2/>
       <div className='min-h-screen bg-white flex items-center justify-center py-12 px-4'>
         <div className='container mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center'>
           {/* Left Section - Logo */}
@@ -69,26 +74,82 @@ const LoginPage = () => {
                 </button>
               </div>
 
+              {/* Error Message */}
+              {error && (
+                <div className='mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm'>
+                  {error}
+                </div>
+              )}
+
               {/* Form */}
               {showOTPScreen ? (
                 <OTPVerification
                   phoneNumber={phoneNumber}
-                  onVerify={(otp) => {
-                    console.log('OTP Verified:', otp)
-                    // Handle OTP verification logic here
-                    // After successful verification, redirect or proceed
+                  onVerify={async (otp) => {
+                    try {
+                      setLoading(true)
+                      setError('')
+                      const response = await authApi.loginWithOTP(phoneNumber, otp)
+                      if (response.success && response.token) {
+                        saveToken(response.token)
+                        router.push('/dashboard')
+                      }
+                    } catch (err) {
+                      const errorMessage = err instanceof Error ? err.message : 'Invalid OTP. Please try again.'
+                      setError(errorMessage)
+                    } finally {
+                      setLoading(false)
+                    }
                   }}
-                  onResend={() => {
-                    console.log('Resending OTP to:', phoneNumber)
-                    // Handle resend OTP logic here
+                  onResend={async () => {
+                    try {
+                      setLoading(true)
+                      setError('')
+                      await authApi.sendOTP(phoneNumber, 'phone')
+                    } catch (err) {
+                      const errorMessage = err instanceof Error ? err.message : 'Failed to resend OTP. Please try again.'
+                      setError(errorMessage)
+                    } finally {
+                      setLoading(false)
+                    }
                   }}
-                  onBack={() => setShowOTPScreen(false)}
+                  onBack={() => {
+                    setShowOTPScreen(false)
+                    setError('')
+                  }}
                 />
               ) : (
-                <form className='space-y-6' onSubmit={(e) => {
+                <form className='space-y-6' onSubmit={async (e) => {
                   e.preventDefault()
+                  setError('')
+                  
                   if (loginMethod === 'phone' && phoneNumber) {
-                    setShowOTPScreen(true)
+                    try {
+                      setLoading(true)
+                      await authApi.sendOTP(phoneNumber, 'phone')
+                      setShowOTPScreen(true)
+                    } catch (err) {
+                      const errorMessage = err instanceof Error ? err.message : 'Failed to send OTP. Please try again.'
+                      setError(errorMessage)
+                    } finally {
+                      setLoading(false)
+                    }
+                  } else if (loginMethod === 'email' && email && password) {
+                    try {
+                      setLoading(true)
+                      const response = await authApi.loginWithPassword(email, password)
+                      if (response.success && response.token) {
+                        saveToken(response.token)
+                        router.push('/dashboard')
+                      }
+                    } catch (err) {
+                      const errorMessage = err instanceof Error ? err.message : 'Invalid email or password. Please try again.'
+                      setError(errorMessage)
+                    } finally {
+                      setLoading(false)
+                    }
+                  } else {
+                    setError('Please fill in all required fields.')
                   }
                 }}>
                   {loginMethod === 'email' ? (
@@ -186,9 +247,10 @@ const LoginPage = () => {
                   {/* Login Button */}
                   <button
                     type='submit'
-                    className='w-full bg-[#4CAF50] text-white py-3 rounded-lg font-medium hover:bg-[#45a049] transition-colors shadow-md text-lg'
+                    disabled={loading}
+                    className='w-full bg-[#4CAF50] text-white py-3 rounded-lg font-medium hover:bg-[#45a049] transition-colors shadow-md text-lg disabled:bg-gray-400 disabled:cursor-not-allowed'
                   >
-                    Login
+                    {loading ? 'Loading...' : 'Login'}
                   </button>
 
                   {/* Signup Link */}
@@ -198,13 +260,13 @@ const LoginPage = () => {
                       Sign up
                     </Link>
                   </div>
-                </form>
+        </form>
               )}
             </div>
           </div>
         </div>
-      </div>
-      <Footer/>
+        </div>
+    <Footer/>
     </>
   )
 }
