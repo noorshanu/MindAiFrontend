@@ -41,9 +41,12 @@ export default function ProfilePage() {
 
   const loadUserProfile = useCallback(async () => {
     try {
+      setLoading(true)
       const response = await profileApi.getProfile()
       if (response.success && response.user) {
         const userData = response.user as User
+        console.log('Profile loaded in profile page:', userData)
+        console.log('Profile picture URL:', userData.profilePicture)
         setUser(userData)
         setFormData({
           username: userData.username || '',
@@ -195,30 +198,19 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-6 max-w-4xl mx-auto'>
       {/* Profile Picture Section */}
       <div className='bg-white rounded-lg shadow-md p-6'>
         <h3 className='text-lg font-semibold text-[#2C5F5D] mb-6'>Profile Picture</h3>
         <div className='flex justify-center'>
-          {user?.profilePicture ? (
-            <ProfilePictureUpload
-              currentPicture={user.profilePicture}
-              onUploadSuccess={async (url) => {
-                setUser({ ...user, profilePicture: url })
-                await loadUserProfile()
-              }}
-              size="large"
-            />
-          ) : (
-            <ProfilePictureUpload
-              currentPicture={undefined}
-              onUploadSuccess={async (url) => {
-                setUser({ ...user, profilePicture: url })
-                await loadUserProfile()
-              }}
-              size="large"
-            />
-          )}
+          <ProfilePictureUpload
+            currentPicture={user?.profilePicture}
+            onUploadSuccess={async (url) => {
+              setUser({ ...user, profilePicture: url })
+              await loadUserProfile()
+            }}
+            size="large"
+          />
         </div>
       </div>
 

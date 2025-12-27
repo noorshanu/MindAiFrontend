@@ -1,6 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 'use client'
 
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { profileApi } from '../libs/api'
 
 interface ProfilePictureUploadProps {
@@ -26,6 +27,14 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
   // - Use preview (data URL) during file upload
   // - Otherwise use currentPicture prop
   const displayImage = preview?.startsWith('data:') ? preview : (currentPicture || null)
+
+  // Debug logging
+  useEffect(() => {
+    if (currentPicture) {
+      console.log('ProfilePictureUpload - currentPicture prop:', currentPicture)
+      console.log('ProfilePictureUpload - displayImage will be:', displayImage)
+    }
+  }, [currentPicture, displayImage])
 
   const sizeClasses = {
     small: 'w-20 h-20',
@@ -125,6 +134,8 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
           ${sizeClasses[size]}
           relative rounded-full border-4 border-[#2C5F5D] overflow-hidden
           cursor-pointer transition-all duration-200
+          bg-gray-100
+          group
           ${dragActive ? 'ring-4 ring-[#84B357] ring-offset-2' : ''}
           ${uploading ? 'opacity-50' : 'hover:border-[#84B357]'}
         `}
@@ -138,9 +149,9 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
           <img
             src={displayImage}
             alt="Profile"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover bg-gray-100"
             key={displayImage} // Force reload when URL changes
-            loading="lazy"
+            loading="eager"
             onError={(e) => {
               console.error('Image load error for URL:', displayImage)
               const target = e.target as HTMLImageElement
@@ -168,10 +179,10 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
           </div>
         )}
 
-        {/* Upload Overlay */}
-        {!uploading && (
-          <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-40 transition-all duration-200 flex items-center justify-center">
-            <div className="opacity-0 hover:opacity-100 transition-opacity">
+        {/* Upload Overlay - Only shows on hover */}
+        {!uploading && displayImage && (
+          <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-40 transition-opacity duration-200 flex items-center justify-center pointer-events-none">
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
               <svg
                 className="w-8 h-8 text-white"
                 fill="none"
