@@ -3,13 +3,20 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { profileApi } from '@/libs/api'
+import ProfilePictureUpload from '@/components/ProfilePictureUpload'
 
 const IntroPage = () => {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedGender, setSelectedGender] = useState<'male' | 'female' | 'other' | null>(null)
+  const [nickname, setNickname] = useState('')
+  const [profilePicture, setProfilePicture] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const totalSteps = 2
+  const [error, setError] = useState<string | null>(null)
+  const totalSteps = 3
+
+  const nicknameSuggestions = ['CoolUser123', 'StarGazer', 'Explorer', 'Dreamer', 'Phoenix']
 
   const handleContinue = async () => {
     if (currentStep === 1) {
@@ -18,15 +25,50 @@ const IntroPage = () => {
       if (selectedGender) {
         try {
           setLoading(true)
+          setError(null)
+          
           // Update user profile with gender
-          // For now, just redirect to dashboard
-          // You can add API call to update profile here
-          router.push('/dashboard')
-        } catch (error) {
-          console.error('Error updating profile:', error)
+          const response = await profileApi.setupProfile({
+            gender: selectedGender
+          })
+          
+          if (response.success) {
+            setCurrentStep(3)
+          } else {
+            setError(response.message || 'Failed to update profile')
+          }
+        } catch (err) {
+          console.error('Error updating profile:', err)
+          setError(err instanceof Error ? err.message : 'Failed to update profile')
         } finally {
           setLoading(false)
         }
+      }
+    } else if (currentStep === 3) {
+      // Final step - save nickname and redirect
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const updateData: { username?: string; profilePicture?: string } = {}
+        if (nickname.trim()) {
+          updateData.username = nickname.trim()
+        }
+        if (profilePicture) {
+          updateData.profilePicture = profilePicture
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          await profileApi.setupProfile(updateData)
+        }
+        
+        // Redirect to dashboard
+        router.push('/dashboard')
+      } catch (err) {
+        console.error('Error updating profile:', err)
+        setError(err instanceof Error ? err.message : 'Failed to update profile')
+      } finally {
+        setLoading(false)
       }
     }
   }
@@ -101,7 +143,7 @@ const IntroPage = () => {
                   onClick={handleContinue}
                   className='mt-8 bg-[#84B357] text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-[#709944] transition-colors shadow-lg'
                 >
-                  Begin Your Healing Journey
+                  Begin Your Healing Journey →
                 </button>
               </div>
             ) : currentStep === 2 ? (
@@ -191,13 +233,111 @@ const IntroPage = () => {
                   </button>
                 </div>
 
+                {error && (
+                  <div className='mt-4 p-3 bg-red-50 border border-red-200 rounded-lg'>
+                    <p className='text-sm text-red-600'>{error}</p>
+                  </div>
+                )}
+
                 <button
                   onClick={handleContinue}
                   disabled={!selectedGender || loading}
                   className='w-full bg-[#84B357] text-white py-4 rounded-lg font-semibold text-lg hover:bg-[#709944] transition-colors shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed mt-8'
                 >
-                  {loading ? 'Saving...' : 'Continue'}
+                  {loading ? 'Saving...' : 'Continue →'}
                 </button>
+              </div>
+            ) : currentStep === 3 ? (
+              // Nickname and Profile Picture Screen
+              <div className='space-y-6'>
+                <h2 className='text-4xl lg:text-5xl font-bold text-[#2C5F5D] font-mon'>
+                  Give Your Nickname
+                </h2>
+
+                {/* Profile Picture Upload */}
+                <div className='flex justify-center'>
+                  <ProfilePictureUpload
+                    currentPicture={profilePicture || undefined}
+                    onUploadSuccess={(url) => {
+                      setProfilePicture(url)
+                    }}
+                    size="large"
+                  />
+                </div>
+
+                {/* Nickname Input */}
+                <div className='space-y-2'>
+                  <label className='block text-sm font-medium text-gray-700'>
+                    Choose your nickname
+                  </label>
+                  <div className='relative'>
+                    <input
+                      type='text'
+                      value={nickname}
+                      onChange={(e) => setNickname(e.target.value)}
+                      placeholder='Enter your nickname'
+                      className='w-full px-4 py-3 border-2 border-[#2C5F5D] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84B357] focus:border-[#84B357]'
+                      maxLength={20}
+                    />
+                    <div className='absolute right-3 top-1/2 -translate-y-1/2'>
+                      <svg className='w-5 h-5 text-gray-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className='text-sm text-gray-500'>This is how others will see you</p>
+                </div>
+
+                {/* Suggestions */}
+                <div className='space-y-2'>
+                  <label className='block text-sm font-medium text-gray-700'>Suggestions</label>
+                  <div className='flex flex-wrap gap-2'>
+                    {nicknameSuggestions.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        onClick={() => setNickname(suggestion)}
+                        className='px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors'
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Guidelines */}
+                <div className='bg-[#84B357] bg-opacity-10 border-2 border-[#84B357] rounded-lg p-4'>
+                  <div className='flex items-start gap-3'>
+                    <svg className='w-5 h-5 text-[#84B357] mt-0.5' fill='currentColor' viewBox='0 0 20 20'>
+                      <path fillRule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z' clipRule='evenodd' />
+                    </svg>
+                    <div className='space-y-1 text-sm'>
+                      <p className='font-medium text-[#2C5F5D]'>Nickname Guidelines:</p>
+                      <ul className='list-disc list-inside text-gray-700 space-y-1'>
+                        <li>3-20 characters long</li>
+                        <li>No special characters</li>
+                        <li>Must be unique</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {error && (
+                  <div className='p-3 bg-red-50 border border-red-200 rounded-lg'>
+                    <p className='text-sm text-red-600'>{error}</p>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleContinue}
+                  disabled={loading}
+                  className='w-full bg-[#84B357] text-white py-4 rounded-lg font-semibold text-lg hover:bg-[#709944] transition-colors shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed'
+                >
+                  {loading ? 'Saving...' : 'Continue →'}
+                </button>
+
+                <p className='text-center text-sm text-gray-500'>
+                  You can change this later in settings
+                </p>
               </div>
             ) : null}
           </div>
@@ -207,7 +347,7 @@ const IntroPage = () => {
             {/* Progress Bar */}
             <div className='flex-1 bg-gray-200 h-2 rounded-full overflow-hidden max-w-md mx-auto'>
               <div
-                className='bg-white h-full transition-all duration-300'
+                className='bg-[#84B357] h-full transition-all duration-300'
                 style={{ width: `${(currentStep / totalSteps) * 100}%` }}
               ></div>
             </div>

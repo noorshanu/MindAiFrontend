@@ -137,3 +137,90 @@ export const getToken = (): string | null => {
   return null
 }
 
+// Profile API functions
+export const profileApi = {
+  // Get user profile
+  getProfile: async () => {
+    return fetchApi('/profile')
+  },
+
+  // Update profile (PUT)
+  updateProfile: async (data: { username?: string; gender?: string; profilePicture?: string }) => {
+    return fetchApi('/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  },
+
+  // Onboarding/Profile setup (POST) - for post-login setup
+  setupProfile: async (data: { gender?: string; username?: string; profilePicture?: string }) => {
+    return fetchApi('/profile', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  },
+
+  // Upload profile picture
+  uploadProfilePicture: async (file: File): Promise<ApiResponse<{ profilePicture: string; user: Record<string, unknown> }>> => {
+    const url = `${API_BASE_URL}/profile/upload-picture`
+    const token = getToken()
+
+    const formData = new FormData()
+    formData.append('profilePicture', file)
+
+    const headers: HeadersInit = {}
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+    // Don't set Content-Type for FormData, browser will set it with boundary
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new ApiError(
+          response.status,
+          data.error || data.message || 'Upload failed'
+        )
+      }
+
+      return data
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error
+      }
+      throw new ApiError(500, 'Network error or server unavailable')
+    }
+  },
+
+  // Change password
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    return fetchApi('/profile/change-password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    })
+  },
+
+  // Add contact (email or phone)
+  addContact: async (contact: string, type: 'email' | 'phone') => {
+    return fetchApi('/profile/add-contact', {
+      method: 'POST',
+      body: JSON.stringify({ contact, type }),
+    })
+  },
+
+  // Verify contact OTP
+  verifyContact: async (contact: string, otp: string, type: 'email' | 'phone') => {
+    return fetchApi('/profile/verify-contact', {
+      method: 'POST',
+      body: JSON.stringify({ contact, otp, type }),
+    })
+  },
+}
+

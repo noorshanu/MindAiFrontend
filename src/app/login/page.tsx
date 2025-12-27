@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import Navbar2 from '@/components/Navbar2'
 import Footer from '@/components/Footer'
 import OTPVerification from '@/components/OTPVerification'
-import { authApi, saveToken } from '@/libs/api'
+import { authApi, profileApi, saveToken } from '@/libs/api'
 
 const LoginPage = () => {
   const router = useRouter()
@@ -92,7 +92,23 @@ const LoginPage = () => {
                       const response = await authApi.loginWithOTP(phoneNumber, otp)
                       if (response.success && response.token) {
                         saveToken(response.token)
-                        router.push('/dashboard')
+                        // Check if profile is complete
+                        try {
+                          const profileResponse = await profileApi.getProfile()
+                          if (profileResponse.success && profileResponse.user) {
+                            const user = profileResponse.user as any
+                            // Check if profile needs completion (missing gender or username)
+                            if (!user.gender || !user.username) {
+                              router.push('/intro')
+                            } else {
+                              router.push('/dashboard')
+                            }
+                          } else {
+                            router.push('/intro')
+                          }
+                        } catch {
+                          router.push('/intro')
+                        }
                       }
                     } catch (err) {
                       const errorMessage = err instanceof Error ? err.message : 'Invalid OTP. Please try again.'
@@ -140,7 +156,23 @@ const LoginPage = () => {
                       const response = await authApi.loginWithPassword(email, password)
                       if (response.success && response.token) {
                         saveToken(response.token)
-                        router.push('/dashboard')
+                        // Check if profile is complete
+                        try {
+                          const profileResponse = await profileApi.getProfile()
+                          if (profileResponse.success && profileResponse.user) {
+                            const user = profileResponse.user as any
+                            // Check if profile needs completion (missing gender or username)
+                            if (!user.gender || !user.username) {
+                              router.push('/intro')
+                            } else {
+                              router.push('/dashboard')
+                            }
+                          } else {
+                            router.push('/intro')
+                          }
+                        } catch {
+                          router.push('/intro')
+                        }
                       }
                     } catch (err) {
                       const errorMessage = err instanceof Error ? err.message : 'Invalid email or password. Please try again.'
