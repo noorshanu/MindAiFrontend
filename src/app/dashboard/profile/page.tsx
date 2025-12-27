@@ -152,8 +152,12 @@ export default function ProfilePage() {
         setSuccess(`OTP sent to your ${contactData.type}`)
         setOtpSent(true)
         // In development, OTP is hardcoded as 123456
-        if (response.otp) {
-          setContactData({ ...contactData, otp: response.otp })
+        const responseData = response as { success: boolean; otp?: string }
+        if (responseData.otp) {
+          setContactData({ ...contactData, otp: responseData.otp })
+        } else {
+          // Default OTP for development
+          setContactData({ ...contactData, otp: '123456' })
         }
       }
     } catch (err) {
